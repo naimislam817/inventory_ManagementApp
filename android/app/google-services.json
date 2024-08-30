@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "470224964945",
+    "project_id": "authentication-bcff2",
+    "storage_bucket": "authentication-bcff2.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:470224964945:android:a39aa8a37b41bbe26b1770",
+        "android_client_info": {
+          "package_name": "com.example.authentication_experiement"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBs-COE0cJJtWhH2x4GZ3iEv2JjVW-FF0k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

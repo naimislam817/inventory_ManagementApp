@@ -21,6 +21,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController nameController = TextEditingController();
   bool isLoading = false;
+  @override
+  void dispose(){
+    super.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    nameController.dispose();
+  }
  void signUpUser() async {
   String res = await AuthServices().signUpUser(
   email: emailController.text,
@@ -63,7 +70,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 TextFieldInput(
                     textEditingController: passwordController,
                     hintText: "Enter Your password",
-                    icon: Icons.lock),
+                    ispass: true,
+                    icon: Icons.lock
+                ),
 
                 MyButton(onTab: signUpUser , text: "Sign Up"),
                 SizedBox(height: height/15),
@@ -73,7 +82,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     const Text("Already Have An Account?" , style: TextStyle(fontSize: 16),),
                     SizedBox(width: 10,),
                     GestureDetector(onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen(),),);
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const LoginScreen(),),);
                     },
                       child: Text("LogIn", style:  TextStyle(
                           fontWeight: FontWeight.bold , fontSize: 16

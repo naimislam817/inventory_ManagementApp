@@ -1,6 +1,10 @@
+
+import 'package:authentication_experiement/login%20signup/screen/home_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:leak_tracker_flutter_testing/leak_tracker_flutter_testing.dart';
+
 
 import 'login signup/screen/login.dart';
 
@@ -18,8 +22,19 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return const  MaterialApp(
-      home: LoginScreen(),   //will build this
+    return   MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: StreamBuilder(
+          stream: FirebaseAuth.instance.authStateChanges(),
+          builder: (context,snapshot) {
+        if(snapshot.hasData){
+            return HomeScreen();
+          } else {
+            return LoginScreen();
+          }
+      }
+      ),
+      //will build this
     );
   }
 }

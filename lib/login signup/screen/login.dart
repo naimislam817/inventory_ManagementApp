@@ -3,7 +3,10 @@ import 'package:authentication_experiement/login%20signup/screen/sign_up.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/material.dart';
 
+import '../Services/authentication.dart';
+import '../Widget/snackbar.dart';
 import '../Widget/textfield.dart';
+import 'home_screen.dart';
 
 
 
@@ -17,6 +20,32 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  bool isLoading =  false;
+  void dispose(){
+    super.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+
+  }
+  void loginUsers() async {
+    String res = await AuthServices().loginUser(
+        email: emailController.text,
+        password: passwordController.text,
+       );
+    if (res == "success") {
+      setState(() {
+        isLoading = true;
+      }); //navigate to the next screen
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const HomeScreen()));
+    } else {
+      setState(() {
+        isLoading = false;
+      });
+      ShowSnackBar(context, res);
+    }
+
+  }
+
   @override
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height;
@@ -37,6 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextFieldInput(
                     textEditingController: passwordController,
                     hintText: "Enter Your password",
+                    ispass: true,
                     icon: Icons.lock),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 35),
@@ -44,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     alignment: Alignment.centerRight,
                     child: Text("Forgot Password?", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 16,color: Colors.blue),),),
                 ),
-                MyButton(onTab: () {} , text: "Log In"),
+                MyButton(onTab: loginUsers , text: "Log In"),
                 SizedBox(height: height/15),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,

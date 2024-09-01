@@ -11,7 +11,7 @@ class TextFieldInput  extends StatelessWidget {
   const TextFieldInput ({
     super.key,
     required this.textEditingController,
-     this.ispass = false,
+    this.ispass = false,
     required this.hintText,
     required this.icon,
 
@@ -28,15 +28,15 @@ class TextFieldInput  extends StatelessWidget {
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: const TextStyle(color: Colors.black45,fontSize: 18),
-        prefixIcon: Icon(Icons.email_outlined),
-        contentPadding:const EdgeInsets.symmetric(vertical: 15, horizontal: 20) ,
-        border: InputBorder.none,
-        filled: true,
-        fillColor: Color(0xFFedf0f8),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide.none,
-          borderRadius: BorderRadius.circular(30),
-        ),
+          prefixIcon:   Icon(icon),
+          contentPadding:const EdgeInsets.symmetric(vertical: 15, horizontal: 20) ,
+          border: InputBorder.none,
+          filled: true,
+          fillColor: Color(0xFFedf0f8),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.circular(30),
+          ),
           focusedBorder:  OutlineInputBorder(
             borderSide: const  BorderSide(
                 width: 2,
@@ -44,7 +44,7 @@ class TextFieldInput  extends StatelessWidget {
             ),
             borderRadius: BorderRadius.circular(30),
           ),
-      ),
+        ),
       ),
     );
   }

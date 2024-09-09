@@ -1,5 +1,6 @@
 
 import 'package:authentication_experiement/login%20signup/screen/home_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,9 @@ void main() async  {
   //Firebase Initialization Code
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  FirebaseFirestore.instance.settings = const Settings(
+   persistenceEnabled: true,
+  );
   //Run app code
   runApp(const MyApp());
 }
@@ -28,7 +32,7 @@ class MyApp extends StatelessWidget {
           stream: FirebaseAuth.instance.authStateChanges(),
           builder: (context,snapshot) {
         if(snapshot.hasData){
-            return HomeScreen();
+            return HomePage();
           } else {
             return LoginScreen();
           }

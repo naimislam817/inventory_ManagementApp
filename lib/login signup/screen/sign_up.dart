@@ -21,80 +21,104 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController nameController = TextEditingController();
   bool isLoading = false;
+
   @override
-  void dispose(){
+  void dispose() {
     super.dispose();
     emailController.dispose();
     passwordController.dispose();
     nameController.dispose();
   }
- void signUpUser() async {
-  String res = await AuthServices().signUpUser(
-  email: emailController.text,
-  password: passwordController.text,
-  name: nameController.text);
-  if (res == "success") {
-  setState(() {
-  isLoading = true;
-  }); //navigate to the next screen
-    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => HomeScreen()));
-  } else {
-   setState(() {
-   isLoading = false;
-   });
-   ShowSnackBar(context, res);
+
+  void signUpUser() async {
+    String res = await AuthServices().signUpUser(
+      email: emailController.text,
+      password: passwordController.text,
+      name: nameController.text,
+    );
+    if (res == "success") {
+      setState(() {
+        isLoading = true;
+      });
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => HomePage()),
+      );
+    } else {
+      setState(() {
+        isLoading = false;
+      });
+      ShowSnackBar(context, res);
+    }
   }
 
- }
   @override
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height;
     return Scaffold(
-
-      backgroundColor: Colors.white ,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: SizedBox(
           child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(height: height/3 , child: Image.asset("images/signup.jpg"),
+                SizedBox(
+                  height: height / 3,
+                  child: Image.asset("images/signup.jpg", fit: BoxFit.cover),
                 ),
+                const SizedBox(height: 20),
                 TextFieldInput(
-                    textEditingController: nameController,
-                    hintText: "Enter Your Name",
-                    icon: Icons.person),
-                TextFieldInput(
-                    textEditingController: emailController,
-                    hintText: "Enter Your Email",
-                    icon: Icons.email),
-                TextFieldInput(
-                    textEditingController: passwordController,
-                    hintText: "Enter Your password",
-                    ispass: true,
-                    icon: Icons.lock
+                  textEditingController: nameController,
+                  hintText: "Enter Your Name",
+                  icon: Icons.person,
                 ),
-
-                MyButton(onTab: signUpUser , text: "Sign Up"),
-                SizedBox(height: height/15),
+                const SizedBox(height: 16),
+                TextFieldInput(
+                  textEditingController: emailController,
+                  hintText: "Enter Your Email",
+                  icon: Icons.email,
+                ),
+                const SizedBox(height: 16),
+                TextFieldInput(
+                  textEditingController: passwordController,
+                  hintText: "Enter Your Password",
+                  ispass: true,
+                  icon: Icons.lock,
+                ),
+                const SizedBox(height: 24),
+                MyButton(
+                  onTab: signUpUser,
+                  text: "Sign Up",
+                ),
+                const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text("Already Have An Account?" , style: TextStyle(fontSize: 16),),
-                    SizedBox(width: 10,),
-                    GestureDetector(onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const LoginScreen(),),);
-                    },
-                      child: Text("LogIn", style:  TextStyle(
-                          fontWeight: FontWeight.bold , fontSize: 16
+                    const Text(
+                      "Already Have An Account?",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const LoginScreen(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        "Log In",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.blueAccent,
+                        ),
                       ),
-                      ) ,
                     ),
                   ],
                 ),
-
-
               ],
             ),
           ),

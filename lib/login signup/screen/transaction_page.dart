@@ -1,23 +1,29 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw; // For PDF generation
+import 'package:printing/printing.dart'; // For PDF export
 
-class TransactionPage extends StatefulWidget {
-  const TransactionPage({Key? key}) : super(key: key);
+class TransactionList extends StatefulWidget {
+  const TransactionList({Key? key}) : super(key: key);
 
   @override
-  _TransactionPageState createState() => _TransactionPageState();
+  _TransactionListState createState() => _TransactionListState();
 }
 
-class _TransactionPageState extends State<TransactionPage> {
+class _TransactionListState extends State<TransactionList> {
   TextEditingController _searchController = TextEditingController();
   DateTime? _selectedDate;
   String? _searchQuery;
+
+  // Sales data to be displayed and exported
+  List<Map<String, dynamic>> salesData = [];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Transaction Page'),
+        title: const Text('Sales Transactions'),
         backgroundColor: Colors.blueAccent,
         elevation: 0,
       ),
@@ -27,7 +33,7 @@ class _TransactionPageState extends State<TransactionPage> {
             padding: const EdgeInsets.all(12.0),
             child: Row(
               children: [
-                // Search Field with Blue Border and Style
+                // Search Field
                 Expanded(
                   child: TextField(
                     controller: _searchController,
@@ -54,7 +60,7 @@ class _TransactionPageState extends State<TransactionPage> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                // Date Picker Button with Icon
+                // Date Picker Button
                 IconButton(
                   icon: Icon(Icons.calendar_today, color: Colors.blueAccent),
                   onPressed: () async {
@@ -88,67 +94,66 @@ class _TransactionPageState extends State<TransactionPage> {
           const SizedBox(height: 10),
           Expanded(
             child: StreamBuilder(
-              stream: _getFilteredTransactions(),
+              stream: _getFilteredSales(),
               builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
                   return const Center(
-                    child: Text('Error fetching transactions.',
+                    child: Text('Error fetching sales transactions.',
                         style: TextStyle(color: Colors.red)),
                   );
                 }
 
-                final transactions = snapshot.data?.docs ?? [];
+                final sales = snapshot.data?.docs ?? [];
 
-                if (transactions.isEmpty) {
+                if (sales.isEmpty) {
                   return const Center(
-                    child: Text('No transactions found.',
+                    child: Text('No sales found.',
                         style: TextStyle(color: Colors.blueAccent)),
                   );
                 }
 
-                return ListView.builder(
-                  itemCount: transactions.length,
-                  itemBuilder: (context, index) {
-                    final transaction = transactions[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                          vertical: 10, horizontal: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15.0),
-                      ),
-                      elevation: 5,
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.all(15),
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.blueAccent,
-                          child: Icon(Icons.inventory, color: Colors.white),
-                        ),
-                        title: Text(
-                          transaction['productName'],
-                          style: TextStyle(
-                            color: Colors.blueAccent,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Quantity: ${transaction['quantity']}',
-                                style: TextStyle(color: Colors.black54)),
-                            Text('Price: \$${transaction['price']}',
-                                style: TextStyle(color: Colors.black54)),
-                            Text(
-                              'Purchase Date: ${transaction['purchaseDate'].toDate().toLocal().toString()}',
-                              style: TextStyle(color: Colors.black54),
-                            ),
+                salesData = sales.map((sale) {
+                  return {
+                    'productName': sale['productName'],
+                    'quantity': sale['quantity'],
+                    'price': sale['price'],
+                    'saleData': sale['saleData'].toDate(),
+                  };
+                }).toList();
+
+                return Column(
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: DataTable(
+                          columns: const [
+                            DataColumn(label: Text('Product Name')),
+                            DataColumn(label: Text('Quantity')),
+                            DataColumn(label: Text('Price')),
+                            DataColumn(label: Text('Sale Date')),
                           ],
+                          rows: salesData
+                              .map((sale) => DataRow(cells: [
+                            DataCell(Text(sale['productName'])),
+                            DataCell(Text(sale['quantity'].toString())),
+                            DataCell(Text(sale['price'].toString())),
+                            DataCell(Text(sale['saleData'].toString())),
+                          ]))
+                              .toList(),
                         ),
                       ),
-                    );
-                  },
+                    ),
+                    const SizedBox(height: 10),
+                    ElevatedButton.icon(
+                      onPressed: _exportToPDF, // Call the export function
+                      icon: const Icon(Icons.picture_as_pdf),
+                      label: const Text('Export to PDF'),
+                    ),
+                  ],
                 );
               },
             ),
@@ -158,11 +163,10 @@ class _TransactionPageState extends State<TransactionPage> {
     );
   }
 
-  Stream<QuerySnapshot> _getFilteredTransactions() {
-    CollectionReference transactions =
-    FirebaseFirestore.instance.collection('products');
-
-    Query query = transactions;
+  // Stream to get filtered sales based on product name and date
+  Stream<QuerySnapshot> _getFilteredSales() {
+    CollectionReference sales = FirebaseFirestore.instance.collection('sales');
+    Query query = sales;
 
     // Filter by product name
     if (_searchQuery != null && _searchQuery!.isNotEmpty) {
@@ -173,17 +177,45 @@ class _TransactionPageState extends State<TransactionPage> {
 
     // Filter by selected date
     if (_selectedDate != null) {
-      Timestamp startOfDay = Timestamp.fromDate(DateTime(
-          _selectedDate!.year, _selectedDate!.month, _selectedDate!.day));
-      Timestamp endOfDay = Timestamp.fromDate(DateTime(
-          _selectedDate!.year, _selectedDate!.month, _selectedDate!.day)
-          .add(Duration(days: 1)));
+      // Set the start and end of the selected day for filtering
+      DateTime startOfDay = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, 0, 0, 0);
+      DateTime endOfDay = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, 23, 59, 59);
+
+      Timestamp startTimestamp = Timestamp.fromDate(startOfDay);
+      Timestamp endTimestamp = Timestamp.fromDate(endOfDay);
 
       query = query
-          .where('purchaseDate', isGreaterThanOrEqualTo: startOfDay)
-          .where('purchaseDate', isLessThan: endOfDay);
+          .where('saleData', isGreaterThanOrEqualTo: startTimestamp)
+          .where('saleData', isLessThanOrEqualTo: endTimestamp);
     }
 
     return query.snapshots();
+  }
+
+  // Function to export table data to PDF
+  Future<void> _exportToPDF() async {
+    final pdf = pw.Document();
+
+    // Create a table in the PDF
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Table.fromTextArray(
+            headers: ['Product Name', 'Quantity', 'Price', 'Sale Date'],
+            data: salesData.map((sale) {
+              return [
+                sale['productName'],
+                sale['quantity'].toString(),
+                sale['price'].toString(),
+                sale['saleData'].toString(),
+              ];
+            }).toList(),
+          );
+        },
+      ),
+    );
+
+    // Save the PDF and trigger the download
+    await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
   }
 }

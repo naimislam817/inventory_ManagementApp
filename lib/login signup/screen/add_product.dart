@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart'; // Import Firebase Storage
-import 'dart:io'; // Import File
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
 
 class AddProductPage extends StatefulWidget {
   const AddProductPage({Key? key}) : super(key: key);
@@ -16,13 +16,13 @@ class _AddProductPageState extends State<AddProductPage> {
   final TextEditingController quantityController = TextEditingController();
   final TextEditingController priceController = TextEditingController();
   DateTime? selectedDate;
-  bool _isLoading = false; // Loading state for when the product is being added
+  bool _isLoading = false;
 
-  // For Image selection
+  // Image Picker
   XFile? _imageFile;
   final ImagePicker _picker = ImagePicker();
 
-  // Function to pick image from gallery or camera
+  // Pick Image
   Future<void> _pickImage(ImageSource source) async {
     final pickedImage = await _picker.pickImage(source: source);
     if (pickedImage != null) {
@@ -32,34 +32,25 @@ class _AddProductPageState extends State<AddProductPage> {
     }
   }
 
-  // Upload Image to Firebase Storage
+  // Upload Image to Firebase
   Future<String?> _uploadImageToFirebase() async {
-    if (_imageFile == null) {
-      // No image selected, skip upload
-      return null;
-    }
-
+    if (_imageFile == null) return null;
     try {
       final file = File(_imageFile!.path);
       final storageRef = FirebaseStorage.instance.ref();
       final filePath = 'images/${DateTime.now().millisecondsSinceEpoch}.jpg';
       final imageRef = storageRef.child(filePath);
-
-      // Upload the file to Firebase Storage
       await imageRef.putFile(file);
-
-      // Get the download URL
       return await imageRef.getDownloadURL();
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Image upload failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Image upload failed: $e')));
       return null;
     }
   }
 
   // Select Date
   Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+    final picked = await showDatePicker(
       context: context,
       initialDate: selectedDate ?? DateTime.now(),
       firstDate: DateTime(2020),
@@ -75,54 +66,30 @@ class _AddProductPageState extends State<AddProductPage> {
   // Add Product to Firestore
   Future<void> addProduct() async {
     setState(() {
-      _isLoading = true; // Start loading
+      _isLoading = true;
     });
 
     final productName = productNameController.text.trim();
     final quantity = int.tryParse(quantityController.text);
     final price = double.tryParse(priceController.text);
-    final imageUrl = await _uploadImageToFirebase(); // Upload image and get URL
+    final imageUrl = await _uploadImageToFirebase();
 
-    // Debug prints for tracking values
-    print('Product Name: $productName');
-    print('Quantity: $quantity');
-    print('Price: $price');
-    print('Purchase Date: $selectedDate');
-    print('Image URL: $imageUrl');
-
-    if (imageUrl == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Image upload failed. Please try again.')));
-      setState(() {
-        _isLoading = false; // Stop loading if image upload fails
-      });
-      return;
-    }
-
-    // Ensure all fields are filled correctly
-    if (productName.isNotEmpty &&
-        quantity != null &&
-        price != null &&
-        selectedDate != null) {
+    if (productName.isNotEmpty && quantity != null && price != null && selectedDate != null && imageUrl != null) {
       await FirebaseFirestore.instance.collection('products').add({
         'productName': productName,
         'quantity': quantity,
         'price': price,
         'purchaseDate': selectedDate,
-        'imageUrl': imageUrl, // Store the image URL if available
+        'imageUrl': imageUrl,
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Product added successfully')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Product added successfully')));
       Navigator.pop(context);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all fields')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
     }
 
     setState(() {
-      _isLoading = false; // Stop loading after adding the product
+      _isLoading = false;
     });
   }
 
@@ -262,9 +229,11 @@ class _AddProductPageState extends State<AddProductPage> {
                         ElevatedButton.icon(
                           onPressed: () => _selectDate(context),
                           icon: const Icon(Icons.calendar_today),
-                          label: Text(selectedDate != null
-                              ? 'Purchase Date: ${selectedDate!.toLocal()}'.split(' ')[0]
-                              : 'Select Purchase Date'),
+                          label: Text(
+                            selectedDate != null
+                                ? 'Purchase Date: ${selectedDate!.toLocal()}'.split(' ')[0]
+                                : 'Select Purchase Date',
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blueAccent,
                             shape: RoundedRectangleBorder(

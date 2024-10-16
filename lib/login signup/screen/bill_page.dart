@@ -2,9 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:path_provider/path_provider.dart';
-import 'dart:io';
-import 'package:share_plus/share_plus.dart';
+import 'package:printing/printing.dart'; // For PDF export
 
 class BillPage extends StatefulWidget {
   final List<Map<String, dynamic>> transactions;
@@ -28,61 +26,62 @@ class _BillPageState extends State<BillPage> {
     }).toList();
   }
 
-  // Generate and share the PDF
-  Future<void> _generateAndSharePDF() async {
-    final pdf = pw.Document();
-    final transactions = _filteredTransactions;
+  // Generate and export the PDF
+  Future<void> _exportToPDF() async {
+    try {
+      final pdf = pw.Document();
+      final transactions = _filteredTransactions;
 
-    if (transactions.isEmpty) {
-      // Show a message if no transactions are available for the selected date range
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("No transactions available for the selected date range.")),
-      );
-      return;
-    }
+      if (transactions.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("No transactions available for the selected date range.")),
+        );
+        return;
+      }
 
-    pdf.addPage(
-      pw.Page(
-        build: (pw.Context context) {
-          return pw.Column(
-            children: [
-              pw.Text(
-                'Product Bill',
-                style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
-              ),
-              pw.SizedBox(height: 20),
-              pw.Table.fromTextArray(
-                border: pw.TableBorder.all(),
-                headerDecoration: pw.BoxDecoration(
-                  color: PdfColors.blue300,
+      // Add the content to the PDF
+      pdf.addPage(
+        pw.Page(
+          build: (pw.Context context) {
+            return pw.Column(
+              children: [
+                pw.Text(
+                  'Product Bill',
+                  style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
                 ),
-                headerAlignments: {
-                  0: pw.Alignment.center,
-                  1: pw.Alignment.center,
-                  2: pw.Alignment.center,
-                  3: pw.Alignment.center,
-                },
-                data: [
-                  ['Product Name', 'Quantity', 'Price', 'Purchase Date'],
-                  ...transactions.map((transaction) => [
-                    transaction['productName'],
-                    transaction['quantity'].toString(),
-                    transaction['price'].toString(),
-                    (transaction['purchaseDate'] as Timestamp).toDate().toLocal().toString(),
-                  ])
-                ],
-              ),
-            ],
-          );
-        },
-      ),
-    );
+                pw.SizedBox(height: 20),
+                pw.Table.fromTextArray(
+                  border: pw.TableBorder.all(),
+                  headerDecoration: pw.BoxDecoration(
+                    color: PdfColors.blue300,
+                  ),
+                  headerStyle: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+                  cellStyle: pw.TextStyle(fontSize: 12),
+                  data: [
+                    ['Product Name', 'Quantity', 'Price', 'Purchase Date'],
+                    ...transactions.map((transaction) => [
+                      transaction['productName'],
+                      transaction['quantity'].toString(),
+                      transaction['price'].toString(),
+                      (transaction['purchaseDate'] as Timestamp).toDate().toLocal().toString(),
+                    ])
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
+      );
 
-    final outputDir = await getApplicationDocumentsDirectory();
-    final file = File("${outputDir.path}/bill.pdf");
-    await file.writeAsBytes(await pdf.save());
-
-    Share.shareFiles([file.path], text: 'Here is your bill.');
+      // Export the PDF directly (same way as TransactionList page)
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error generating PDF: $e")),
+      );
+    }
   }
 
   @override
@@ -122,7 +121,9 @@ class _BillPageState extends State<BillPage> {
                       ),
                       textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                    child: Text(_startDate != null ? "Start Date: ${_startDate!.toLocal().toString().split(' ')[0]}" : "Select Start Date"),
+                    child: Text(_startDate != null
+                        ? "Start Date: ${_startDate!.toLocal().toString().split(' ')[0]}"
+                        : "Select Start Date"),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -149,7 +150,9 @@ class _BillPageState extends State<BillPage> {
                       ),
                       textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                    child: Text(_endDate != null ? "End Date: ${_endDate!.toLocal().toString().split(' ')[0]}" : "Select End Date"),
+                    child: Text(_endDate != null
+                        ? "End Date: ${_endDate!.toLocal().toString().split(' ')[0]}"
+                        : "Select End Date"),
                   ),
                 ),
               ],
@@ -172,7 +175,8 @@ class _BillPageState extends State<BillPage> {
                         DataCell(Text(transaction['productName'])),
                         DataCell(Text(transaction['quantity'].toString())),
                         DataCell(Text(transaction['price'].toString())),
-                        DataCell(Text((transaction['purchaseDate'] as Timestamp).toDate().toLocal().toString())),
+                        DataCell(Text(
+                            (transaction['purchaseDate'] as Timestamp).toDate().toLocal().toString())),
                       ],
                     );
                   }).toList(),
@@ -182,7 +186,7 @@ class _BillPageState extends State<BillPage> {
             const SizedBox(height: 20),
             // Generate PDF Button
             ElevatedButton(
-              onPressed: _generateAndSharePDF,
+              onPressed: _exportToPDF,
               child: const Text('Generate PDF'),
               style: ElevatedButton.styleFrom(
                 foregroundColor: Colors.white, backgroundColor: Colors.blueAccent,

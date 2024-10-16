@@ -70,10 +70,17 @@ class _TransactionListState extends State<TransactionList> {
                       firstDate: DateTime(2000),
                       lastDate: DateTime(2101),
                     );
-                    if (pickedDate != null && pickedDate != _selectedDate) {
+
+                    if (pickedDate != null) {
+                      // If a date was picked, update the selectedDate variable
                       setState(() {
                         _selectedDate = pickedDate;
                       });
+                    } else {
+                      // If the user canceled the date picker, you can optionally handle it here
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("No date selected")),
+                      );
                     }
                   },
                 ),

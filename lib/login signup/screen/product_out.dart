@@ -121,11 +121,19 @@ class _ProductOutPageState extends State<ProductOutPage> {
         'quantity': FieldValue.increment(-quantityOut),
       });
 
+      // Log the transaction in the "sales" collection
+      await FirebaseFirestore.instance.collection('sales').add({
+        'productName': docSnapshot['productName'],
+        'quantity': quantityOut,
+        'price': docSnapshot['price'],
+        'saleData': Timestamp.now(),  // Current timestamp for the transaction
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Stock updated successfully!')),
+        const SnackBar(content: Text('Stock updated and transaction logged!')),
       );
 
-      // Clear the selection
+      // Clear the form after success
       setState(() {
         selectedProductId = null;
         quantityOut = 0;

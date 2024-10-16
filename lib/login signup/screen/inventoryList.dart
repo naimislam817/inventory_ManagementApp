@@ -50,7 +50,7 @@ class _InventoryListState extends State<InventoryList> {
                           borderRadius: BorderRadius.circular(10.0),
                           borderSide: BorderSide(color: Colors.blueAccent, width: 2),
                         ),
-                        enabledBorder: OutlineInputBorder(
+                          enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10.0),
                           borderSide: BorderSide(color: Colors.blueAccent, width: 2),
                         ),
